@@ -1,5 +1,5 @@
--- Kira Hub - Ultimate Battlegrounds
--- Mobile Friendly + Menu
+-- Kira Hub - Ultimate Battlegrounds (Final Mobile)
+-- Sliders + Ignore Friends + Better Controls
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -7,13 +7,8 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local StarterGui = game:GetService("StarterGui")
 local VirtualInputManager = game:GetService("VirtualInputManager")
-local TweenService = game:GetService("TweenService")
 local Camera = workspace.CurrentCamera
 
--- خدمات
-local Mouse = LocalPlayer:GetMouse()
-
--- إعدادات
 local Settings = {
     KillAura = false,
     Hitbox = false,
@@ -21,130 +16,205 @@ local Settings = {
     Fly = false,
     ESP = false,
     AntiStun = false,
-    SpeedValue = 50,
-    FlySpeed = 65,
-    HitboxSize = 16,
-    KillAuraRange = 20
+    AutoBlock = false,
+    AntiLag = false,
+    IgnoreFriends = true,
+    SpeedValue = 55,
+    FlySpeed = 75,
+    HitboxSize = 18,
+    KillAuraRange = 22
 }
 
--- إشعار
 local function Notify(title, text)
     pcall(function()
         StarterGui:SetCore("SendNotification", {
             Title = title,
             Text = text,
-            Duration = 3
+            Duration = 2.5
         })
     end)
 end
 
-Notify("Kira Hub", "تم التحميل بنجاح")
+Notify("Kira Hub", "تم التحميل")
 
--- ===== إنشاء القائمة (Menu) =====
+-- ===== GUI =====
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "KiraHub"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = game:GetService("CoreGui")
+pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
+if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
+
+local OpenBtn = Instance.new("TextButton")
+OpenBtn.Size = UDim2.new(0, 50, 0, 50)
+OpenBtn.Position = UDim2.new(0, 12, 0.45, 0)
+OpenBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
+OpenBtn.Text = "KH"
+OpenBtn.TextColor3 = Color3.new(1,1,1)
+OpenBtn.Font = Enum.Font.GothamBold
+OpenBtn.TextSize = 16
+OpenBtn.Visible = false
+OpenBtn.Parent = ScreenGui
+Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(0, 10)
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Name = "Main"
-MainFrame.Size = UDim2.new(0, 260, 0, 340)
-MainFrame.Position = UDim2.new(0.5, -130, 0.5, -170)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+MainFrame.Size = UDim2.new(0, 270, 0, 520)
+MainFrame.Position = UDim2.new(0.5, -135, 0.5, -260)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
-
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 12)
-UICorner.Parent = MainFrame
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
 
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-Title.BorderSizePixel = 0
+Title.Size = UDim2.new(1, 0, 0, 38)
+Title.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
 Title.Text = "Kira Hub | UBG"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
+Title.TextSize = 16
 Title.Parent = MainFrame
-
-local TitleCorner = Instance.new("UICorner")
-TitleCorner.CornerRadius = UDim.new(0, 12)
-TitleCorner.Parent = Title
+Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 12)
 
 local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 30, 0, 30)
-CloseBtn.Position = UDim2.new(1, -35, 0, 5)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseBtn.Size = UDim2.new(0, 28, 0, 28)
+CloseBtn.Position = UDim2.new(1, -33, 0, 5)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
 CloseBtn.Text = "X"
 CloseBtn.TextColor3 = Color3.new(1,1,1)
 CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 16
+CloseBtn.TextSize = 14
 CloseBtn.Parent = MainFrame
-
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 8)
-CloseCorner.Parent = CloseBtn
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 7)
 
 CloseBtn.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
+    MainFrame.Visible = false
+    OpenBtn.Visible = true
 end)
 
--- دالة صنع زر Toggle
-local function CreateToggle(name, yPos, callback)
+OpenBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = true
+    OpenBtn.Visible = false
+end)
+
+-- FPS
+local FPSLabel = Instance.new("TextLabel")
+FPSLabel.Size = UDim2.new(0.9, 0, 0, 22)
+FPSLabel.Position = UDim2.new(0.05, 0, 0, 485)
+FPSLabel.BackgroundTransparency = 1
+FPSLabel.Text = "FPS: --"
+FPSLabel.TextColor3 = Color3.fromRGB(80, 255, 120)
+FPSLabel.Font = Enum.Font.Gotham
+FPSLabel.TextSize = 13
+FPSLabel.Parent = MainFrame
+
+local function CreateToggle(name, y, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.9, 0, 0, 36)
-    btn.Position = UDim2.new(0.05, 0, 0, yPos)
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    btn.Size = UDim2.new(0.9, 0, 0, 32)
+    btn.Position = UDim2.new(0.05, 0, 0, y)
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
     btn.Text = name .. " : OFF"
-    btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    btn.TextColor3 = Color3.fromRGB(160, 160, 160)
     btn.Font = Enum.Font.Gotham
-    btn.TextSize = 15
+    btn.TextSize = 13
     btn.Parent = MainFrame
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = btn
-
-    local enabled = false
+    local on = false
     btn.MouseButton1Click:Connect(function()
-        enabled = not enabled
-        if enabled then
-            btn.Text = name .. " : ON"
-            btn.BackgroundColor3 = Color3.fromRGB(40, 120, 70)
-            btn.TextColor3 = Color3.new(1,1,1)
-        else
-            btn.Text = name .. " : OFF"
-            btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-            btn.TextColor3 = Color3.fromRGB(200, 200, 200)
-        end
-        callback(enabled)
+        on = not on
+        btn.Text = name .. (on and " : ON" or " : OFF")
+        btn.BackgroundColor3 = on and Color3.fromRGB(30, 115, 60) or Color3.fromRGB(30, 30, 40)
+        btn.TextColor3 = on and Color3.new(1,1,1) or Color3.fromRGB(160, 160, 160)
+        callback(on)
     end)
 end
 
--- الأزرار
-CreateToggle("Kill Aura", 55, function(v) Settings.KillAura = v end)
-CreateToggle("Hitbox", 100, function(v) Settings.Hitbox = v end)
-CreateToggle("Speed", 145, function(v) Settings.Speed = v end)
-CreateToggle("Fly (F)", 190, function(v) 
-    Settings.Fly = v 
-    if v then
-        Notify("Fly", "اضغط F باش تشعل/تطفي الطيران")
+-- Toggles
+CreateToggle("Kill Aura", 45, function(v) Settings.KillAura = v end)
+CreateToggle("Hitbox", 82, function(v) Settings.Hitbox = v end)
+CreateToggle("Speed", 119, function(v) Settings.Speed = v end)
+CreateToggle("Fly", 156, function(v) Settings.Fly = v end)
+CreateToggle("ESP", 193, function(v) Settings.ESP = v end)
+CreateToggle("Anti Stun", 230, function(v) Settings.AntiStun = v end)
+CreateToggle("Auto Block", 267, function(v) Settings.AutoBlock = v end)
+CreateToggle("Ignore Friends", 304, function(v) Settings.IgnoreFriends = v end)
+CreateToggle("Anti Lag", 341, function(v) Settings.AntiLag = v end)
+
+-- ===== Sliders =====
+local function CreateSlider(name, y, min, max, default, callback)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.9, 0, 0, 18)
+    label.Position = UDim2.new(0.05, 0, 0, y)
+    label.BackgroundTransparency = 1
+    label.Text = name .. ": " .. default
+    label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 12
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = MainFrame
+
+    local bar = Instance.new("Frame")
+    bar.Size = UDim2.new(0.9, 0, 0, 8)
+    bar.Position = UDim2.new(0.05, 0, 0, y + 20)
+    bar.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+    bar.BorderSizePixel = 0
+    bar.Parent = MainFrame
+    Instance.new("UICorner", bar).CornerRadius = UDim.new(0, 4)
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(60, 140, 255)
+    fill.BorderSizePixel = 0
+    fill.Parent = bar
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 4)
+
+    local dragging = false
+    bar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+        end
+    end)
+    bar.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local pos = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+            fill.Size = UDim2.new(pos, 0, 1, 0)
+            local value = math.floor(min + (max - min) * pos)
+            label.Text = name .. ": " .. value
+            callback(value)
+        end
+    end)
+end
+
+CreateSlider("Hitbox Size", 380, 8, 40, 18, function(v) Settings.HitboxSize = v end)
+CreateSlider("Kill Aura Range", 425, 10, 50, 22, function(v) Settings.KillAuraRange = v end)
+
+-- ===== Features =====
+
+-- FPS
+local frames, last = 0, tick()
+RunService.RenderStepped:Connect(function()
+    frames = frames + 1
+    if tick() - last >= 1 then
+        FPSLabel.Text = "FPS: " .. frames
+        frames = 0
+        last = tick()
     end
 end)
-CreateToggle("ESP", 235, function(v) Settings.ESP = v end)
-CreateToggle("Anti Stun", 280, function(v) Settings.AntiStun = v end)
-
--- ===== الوظائف =====
 
 -- Speed
 RunService.Heartbeat:Connect(function()
     pcall(function()
-        if Settings.Speed and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid.WalkSpeed = Settings.SpeedValue
+        if Settings.Speed then
+            local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
+            if hum then hum.WalkSpeed = Settings.SpeedValue end
         end
     end)
 end)
@@ -152,11 +222,12 @@ end)
 -- Anti Stun
 RunService.Heartbeat:Connect(function()
     pcall(function()
-        if not Settings.AntiStun then return end
-        local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
-        if hum then
-            hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
-            hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+        if Settings.AntiStun then
+            local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
+            if hum then
+                hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+                hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+            end
         end
     end)
 end)
@@ -167,10 +238,11 @@ RunService.Heartbeat:Connect(function()
         if not Settings.Hitbox then return end
         for _, plr in pairs(Players:GetPlayers()) do
             if plr ~= LocalPlayer and plr.Character then
+                if Settings.IgnoreFriends and LocalPlayer:IsFriendsWith(plr.UserId) then continue end
                 local root = plr.Character:FindFirstChild("HumanoidRootPart")
                 if root then
                     root.Size = Vector3.new(Settings.HitboxSize, Settings.HitboxSize, Settings.HitboxSize)
-                    root.Transparency = 0.6
+                    root.Transparency = 0.5
                     root.CanCollide = false
                     root.Massless = true
                 end
@@ -190,12 +262,13 @@ RunService.Heartbeat:Connect(function()
 
         for _, plr in pairs(Players:GetPlayers()) do
             if plr ~= LocalPlayer and plr.Character then
+                if Settings.IgnoreFriends and LocalPlayer:IsFriendsWith(plr.UserId) then continue end
                 local eRoot = plr.Character:FindFirstChild("HumanoidRootPart")
                 local eHum = plr.Character:FindFirstChild("Humanoid")
                 if eRoot and eHum and eHum.Health > 0 then
                     if (root.Position - eRoot.Position).Magnitude <= Settings.KillAuraRange then
                         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                        task.wait(0.04)
+                        task.wait(0.03)
                         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
                         break
                     end
@@ -205,30 +278,30 @@ RunService.Heartbeat:Connect(function()
     end)
 end)
 
--- ESP
-local function AddESP(plr)
+-- Auto Block
+RunService.Heartbeat:Connect(function()
     pcall(function()
-        if plr == LocalPlayer then return end
-        local char = plr.Character
-        if not char or char:FindFirstChild("KiraESP") then return end
-        local root = char:FindFirstChild("HumanoidRootPart")
-        if not root then return end
-
-        local highlight = Instance.new("Highlight")
-        highlight.Name = "KiraESP"
-        highlight.FillColor = Color3.fromRGB(255, 50, 50)
-        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-        highlight.FillTransparency = 0.5
-        highlight.Parent = char
+        if Settings.AutoBlock then
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+            task.wait(0.08)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+        end
     end)
-end
+end)
 
+-- ESP
 RunService.Heartbeat:Connect(function()
     pcall(function()
         if Settings.ESP then
             for _, plr in pairs(Players:GetPlayers()) do
-                if plr.Character and not plr.Character:FindFirstChild("KiraESP") then
-                    AddESP(plr)
+                if plr ~= LocalPlayer and plr.Character and not plr.Character:FindFirstChild("KiraESP") then
+                    if Settings.IgnoreFriends and LocalPlayer:IsFriendsWith(plr.UserId) then continue end
+                    local hl = Instance.new("Highlight")
+                    hl.Name = "KiraESP"
+                    hl.FillColor = Color3.fromRGB(255, 40, 40)
+                    hl.OutlineColor = Color3.new(1,1,1)
+                    hl.FillTransparency = 0.4
+                    hl.Parent = plr.Character
                 end
             end
         else
@@ -242,61 +315,49 @@ RunService.Heartbeat:Connect(function()
     end)
 end)
 
--- Fly
-local BV, BG
-local function ToggleFly()
-    local char = LocalPlayer.Character
-    if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart")
-    local hum = char:FindFirstChild("Humanoid")
-    if not root or not hum then return end
-
-    Settings.Fly = not Settings.Fly
-
-    if Settings.Fly then
-        hum.PlatformStand = true
-        BV = Instance.new("BodyVelocity")
-        BV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-        BV.Velocity = Vector3.zero
-        BV.Parent = root
-        BG = Instance.new("BodyGyro")
-        BG.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-        BG.Parent = root
-        Notify("Fly", "الطيران شغال")
-    else
-        hum.PlatformStand = false
-        if BV then BV:Destroy() end
-        if BG then BG:Destroy() end
-        Notify("Fly", "الطيران تطفا")
-    end
-end
-
-RunService.RenderStepped:Connect(function()
+-- Anti Lag
+RunService.Heartbeat:Connect(function()
     pcall(function()
-        if not Settings.Fly then return end
-        local char = LocalPlayer.Character
-        if not char then return end
-        local root = char:FindFirstChild("HumanoidRootPart")
-        if not root or not BV or not BG then return end
-
-        local dir = Vector3.zero
-        if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir = dir + Camera.CFrame.LookVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir = dir - Camera.CFrame.LookVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir = dir - Camera.CFrame.RightVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir = dir + Camera.CFrame.RightVector end
-        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0,1,0) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then dir = dir - Vector3.new(0,1,0) end
-
-        BV.Velocity = dir.Magnitude > 0 and dir.Unit * Settings.FlySpeed or Vector3.zero
-        BG.CFrame = Camera.CFrame
+        if Settings.AntiLag then
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                    v.Enabled = false
+                end
+            end
+        end
     end)
 end)
 
-UserInputService.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.KeyCode == Enum.KeyCode.F then
-        ToggleFly()
-    end
+-- Fly
+local BV, BG
+RunService.RenderStepped:Connect(function()
+    pcall(function()
+        local char = LocalPlayer.Character
+        if not char then return end
+        local root = char:FindFirstChild("HumanoidRootPart")
+        local hum = char:FindFirstChild("Humanoid")
+        if not root or not hum then return end
+
+        if Settings.Fly then
+            hum.PlatformStand = true
+            if not BV then
+                BV = Instance.new("BodyVelocity")
+                BV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+                BV.Parent = root
+            end
+            if not BG then
+                BG = Instance.new("BodyGyro")
+                BG.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+                BG.Parent = root
+            end
+            BV.Velocity = hum.MoveDirection * Settings.FlySpeed
+            BG.CFrame = Camera.CFrame
+        else
+            hum.PlatformStand = false
+            if BV then BV:Destroy() BV = nil end
+            if BG then BG:Destroy() BG = nil end
+        end
+    end)
 end)
 
-print("Kira Hub Loaded")
+print("Kira Hub Final Loaded")
